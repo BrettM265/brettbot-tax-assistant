@@ -1,5 +1,8 @@
 "use client";
 
+// WORK TO DO | Currently the user cannot answer follow-up questions to refine tax data.
+// Future work: implement multi-turn chat with context retention.
+
 import { useState, useEffect } from "react";
 
 // Button label to intent mapping
@@ -184,10 +187,10 @@ return (
 
       <div className="px-3 pt-2 pb-3 border-b border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-blue-900">
 
-  <h1 className="hidden sm:block text-xl md:text-2xl font-semibold 
-                 text-blue-700 dark:text-blue-300 
-                 mb-1 text-center">
-    BrettBot Tax Estimator
+  <h1 className="block text-lg sm:text-xl md:text-2xl font-semibold 
+               text-blue-700 dark:text-blue-300 
+               mb-1 text-center">
+    BrettBot Tax Estimator (Beta)
   </h1>
 
   {/* Dark mode toggle */}
@@ -230,6 +233,19 @@ return (
             </div>
           )
         )}
+
+                {/* Thinking Indicator */}
+        {isLoading && (
+          <div className="flex items-start gap-3">
+            <div className="max-w-xs p-2 ml-3 rounded-2xl 
+                            bg-gray-200 dark:bg-gray-700 
+                            text-gray-700 dark:text-gray-200 
+                            text-xs italic animate-pulse">
+              Thinking...
+            </div>
+          </div>
+        )}
+
 
         <img
           src="/taxman.png"
