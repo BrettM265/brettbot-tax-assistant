@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     }
 
     // hard user cap
-    if (userMessage.length > 400) {
+    if (userMessage.length > 800) {
       return NextResponse.json(
         { error: "Message too long." },
         { status: 400 }

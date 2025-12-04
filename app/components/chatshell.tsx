@@ -1,11 +1,11 @@
 "use client";
 
-// WORK TO DO | Currently the user cannot answer follow-up questions to refine tax data.
-// Future work: implement multi-turn chat with context retention.
-
 import { useState, useEffect } from "react";
+import ChatHeader from "../components/chatheader";
+import ChatMessages from "../components/chatmessages";
 
-// Button label to intent mapping
+
+// Button label to userMessage defined
 const INTENT_MAP = {
   Deductables: "deductions",
   "W2 Income": "w2",
@@ -20,13 +20,19 @@ const INTENT_MAP = {
   Investments: "investments",
 };
 
+function keepLastTwoMessages(newMessages) {
+  return newMessages.slice(-2);
+}
+
+
 // Centralized prompt builder (cost-safe + structured)
 function buildEngineeredPrompt({ userMessage, intent, taxData }) {
   const base =
-    "You are a US income tax estimation assistant. Never ask for SSN, address, employer names, or bank data. Give rough estimates only. Keep replies under 3 sentences and ask at most 1–2 short questions.";
+    "You are a US income tax estimation assistant. Never ask for SSN, address, employer names, or bank data. Give rough estimates only. Use conservative assumptions. Keep answers brief and to the point. If you don't know, say 'I don't know'. Always assume the user is an individual filer with standard deductions unless told otherwise. You have a 100 token limit for your response, don't end trailing off finish your sentence before you reach the limit. THIS IS FOR 2026 TAX YEAR ONLY.";
 
   const known = `Known: income=${taxData.income || "?"}, state=${taxData.state || "?"}, dependents=${taxData.dependents || "?"}`;
 
+  // more defined intents for buttons
   const intentHints = {
     deductions: "Common US deductions only.",
     w2: "W2 wages and employers.",
@@ -90,13 +96,15 @@ export default function ChatShell() {
 
   // Send typed message to API with engineered prompt
 const handleSend = async () => {
-  if (!input.trim() || isLoading) return;
+  if (!taxData.income || !taxData.state || isLoading) return;
 
-  const userText = input.trim();
+  const userText = `My income is ${taxData.income}, I live in ${taxData.state}, and I have ${taxData.dependents || 0} dependents.`;
 
-  // ✅ REPLACE chat with only the new user message
-  setMessages([{ role: "user", content: userText }]);
-  setInput("");
+  // ✅ Add user message, keep last 2
+  setMessages((prev) =>
+    keepLastTwoMessages([...prev, { role: "user", content: userText }])
+  );
+
   setIsLoading(true);
 
   const engineeredPrompt = buildEngineeredPrompt({
@@ -113,27 +121,35 @@ const handleSend = async () => {
 
     const data = await res.json();
 
-    // ✅ REPLACE chat with only the assistant reply
-    setMessages([
-      { role: "assistant", content: data.reply || data.error || "No response." },
-    ]);
+    // ✅ Add assistant reply, keep last 2
+    setMessages((prev) =>
+      keepLastTwoMessages([
+        ...prev,
+        { role: "assistant", content: data.reply || data.error || "No response." },
+      ])
+    );
   } catch (err) {
-    setMessages([
-      {
-        role: "assistant",
-        content: "Network error talking to the tax assistant.",
-      },
-    ]);
+    setMessages((prev) =>
+      keepLastTwoMessages([
+        ...prev,
+        {
+          role: "assistant",
+          content: "Network error talking to the tax assistant.",
+        },
+      ])
+    );
   } finally {
     setIsLoading(false);
   }
 };
 
-
   // Button-driven intent (example: Deductions)
 const handleButtonClick = async (label) => {
-  // REPLACE chat immediately with the button label
-  setMessages([{ role: "user", content: label }]);
+  // ✅ Add user message, keep last 2
+  setMessages((prev) =>
+    keepLastTwoMessages([...prev, { role: "user", content: label }])
+  );
+
   setIsLoading(true);
 
   const intent = INTENT_MAP[label];
@@ -153,12 +169,20 @@ const handleButtonClick = async (label) => {
 
     const data = await res.json();
 
-    //  REPLACE chat with only the assistant reply
-    setMessages([
-      { role: "assistant", content: data.reply || data.error || "No response." },
-    ]);
+    // ✅ Add assistant reply, keep last 2
+    setMessages((prev) =>
+      keepLastTwoMessages([
+        ...prev,
+        { role: "assistant", content: data.reply || data.error || "No response." },
+      ])
+    );
   } catch (err) {
-    setMessages([{ role: "assistant", content: "Network error." }]);
+    setMessages((prev) =>
+      keepLastTwoMessages([
+        ...prev,
+        { role: "assistant", content: "Network error." },
+      ])
+    );
   } finally {
     setIsLoading(false);
   }
@@ -166,7 +190,6 @@ const handleButtonClick = async (label) => {
   console.log("BUTTON:", label);
   console.log("INTENT:", intent);
 };
-
 
 
   const [darkMode, setDarkMode] = useState(false);
@@ -185,95 +208,90 @@ const handleButtonClick = async (label) => {
 return (
     <div className="flex flex-col h-[700px] w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-gray-900 rounded-3xl shadow-xl overflow-hidden border border-blue-100">
 
-      <div className="px-3 pt-2 pb-3 border-b border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-blue-900">
+      {/* Chat Header */}
+      <ChatHeader darkMode={darkMode} setDarkMode={setDarkMode} />
+      {/* Chat Messages */}
+      <ChatMessages messages={messages} isLoading={isLoading} />
 
-  <h1 className="block text-lg sm:text-xl md:text-2xl font-semibold 
-               text-blue-700 dark:text-blue-300 
-               mb-1 text-center">
-    BrettBot Tax Estimator (Beta)
-  </h1>
 
-  {/* Dark mode toggle */}
-  <button
-    onClick={() => setDarkMode(!darkMode)}
-    className="hidden sm:block mx-auto mb-1 px-3 py-0.5 text-[11px] rounded-full 
-               bg-gray-200 dark:bg-gray-600 dark:text-white"
-  >
-    {darkMode ? "Light Mode" : "Dark Mode"}
-  </button>
+        {/* Tax Data Input Panel - Single Row */}
+<div className="p-1 pl-3 pr-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+  <div className="flex gap-2">
 
-  {/* Safety Warning */}
-  <div className="mx-1 mt-1 px-2 py-1.5 rounded-lg 
-                  bg-yellow-100 dark:bg-yellow-900 
-                  border border-yellow-300 dark:border-yellow-700
-                  text-yellow-900 dark:text-yellow-200 
-                  text-[10px] sm:text-[11px] leading-tight text-center">
-    ⚠️ Never enter personal or private information.  
-    Estimates only — not financial or legal advice.
+    {/* Annual Income */}
+    <input
+        type="text"
+        inputMode="numeric"
+        placeholder="Income"
+        value={taxData.income || ""}
+        onChange={(e) => {
+          const rawValue = e.target.value;
+
+          // Remove commas, spaces, and anything that is NOT a number
+          const cleanedValue = rawValue.replace(/[^0-9]/g, "");
+
+          setTaxData((prev) => ({
+            ...prev,
+            income: cleanedValue,
+          }));
+        }}
+        className="w-1/3 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                  bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
+                  text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+
+
+    {/* State Dropdown */}
+    <select
+      value={taxData.state || ""}
+      onChange={(e) =>
+        setTaxData((prev) => ({ ...prev, state: e.target.value }))
+      }
+      className="w-1/4 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                 bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
+                 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+    >
+      <option value="">State</option>
+      {[
+        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+        "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+        "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+        "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+        "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+      ].map((state) => (
+        <option key={state} value={state}>{state}</option>
+      ))}
+    </select>
+
+    {/* Dependents Dropdown */}
+    <select
+      value={taxData.dependents ?? ""}
+      onChange={(e) =>
+        setTaxData((prev) => ({ ...prev, dependents: e.target.value }))
+      }
+      className="w-1/4 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                 bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
+                 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+    >
+      <option value="">Dependants</option>
+      {Array.from({ length: 13 }, (_, i) => (
+        <option key={i} value={i}>{i}</option>
+      ))}
+    </select>
+
+    {/* Submit Button */}
+    <button
+      onClick={handleSend}
+      disabled={isLoading || !taxData.income || !taxData.state}
+      className="w-1/5 bg-blue-500 dark:bg-blue-600 text-white py-2 rounded-lg 
+                 text-[11px] font-medium active:scale-95 disabled:opacity-50"
+    >
+      {isLoading ? "..." : "Go"}
+    </button>
+
   </div>
-
 </div>
 
-
-      {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4 bg-white dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 relative">
-
-        {messages.map((m, i) =>
-          m.role === "user" ? (
-            <div key={i} className="flex justify-end">
-              <div className="max-w-xs p-2 rounded-2xl bg-blue-400 dark:bg-blue-600 text-white text-xs sm:text-sm leading-snug">
-                {m.content}
-              </div>
-            </div>
-          ) : (
-            <div key={i} className="flex items-start gap-3">
-              <div className="max-w-xs p-2 ml-3 rounded-2xl bg-green-200 dark:bg-green-800 text-gray-900 dark:text-gray-100 text-xs sm:text-sm leading-snug">
-                {m.content}
-              </div>
-            </div>
-          )
-        )}
-
-                {/* Thinking Indicator */}
-        {isLoading && (
-          <div className="flex items-start gap-3">
-            <div className="max-w-xs p-2 ml-3 rounded-2xl 
-                            bg-gray-200 dark:bg-gray-700 
-                            text-gray-700 dark:text-gray-200 
-                            text-xs italic animate-pulse">
-              Thinking...
-            </div>
-          </div>
-        )}
-
-
-        <img
-          src="/taxman.png"
-          alt="Mr taxman"
-          className="absolute left-3 bottom-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 object-contain opacity-70 scale-x-[-1] pointer-events-none"
-        />
-      </div>
-
-      {/* Input Bar */}
-      <div className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-        />
-
-        <button
-          onClick={handleSend}
-          disabled={isLoading}
-          className="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-full font-medium active:scale-95 disabled:opacity-60"
-        >
-          {isLoading ? "..." : "Send"}
-        </button>
-      </div>
 
       {/* Button Grid */}
       <div className="bg-gray-50 dark:bg-gray-800">
