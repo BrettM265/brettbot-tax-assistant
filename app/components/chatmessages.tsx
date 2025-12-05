@@ -34,12 +34,12 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
                 text-xs sm:text-sm leading-snug
                 after:content-[''] 
                 after:absolute 
-                after:right-0 
-                after:bottom-[-6px]
+                after:right-1 
+                after:bottom-[-3px]
                 after:w-0 after:h-0
-                after:border-l-[40px]
+                after:border-l-[10px]
                 after:border-l-transparent
-                after:border-t-[20px]
+                after:border-t-[10px]
                 after:border-t-green-200
                 dark:after:border-t-green-800">
   {m.content}

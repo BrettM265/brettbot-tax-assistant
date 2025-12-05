@@ -18,8 +18,8 @@ export default function ChatHeader({ darkMode, setDarkMode }: ChatHeaderProps) {
       {/* Dark mode toggle */}
       <button
         onClick={() => setDarkMode(!darkMode)}
-        className="hidden sm:block mx-auto mb-1 px-3 py-0.5 text-[11px] rounded-full 
-                   bg-gray-200 dark:bg-gray-600 dark:text-white"
+        className="block mx-auto mb-1 px-2 py-0.5 text-[10px] sm:text-[11px] rounded-full 
+           bg-gray-200 dark:bg-gray-600 dark:text-white"
       >
         {darkMode ? "Light Mode" : "Dark Mode"}
       </button>
