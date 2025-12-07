@@ -8,10 +8,6 @@ import { AI_MODEL, AI_SETTINGS } from "@/lib/aiConfig";
 const DAILY_LIMIT = 15;
 const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 function getUserKey(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for") ||
@@ -21,33 +17,47 @@ function getUserKey(req: Request) {
   return ip.split(",")[0].trim();
 }
 
-
-export async function POST(req: Request) {
-  
+export async function POST(
+  req: Request,
+  context: { env: { OPENAI_API_KEY: string } }
+) {
   try {
-        const userKey = getUserKey(req);
-    const now = Date.now();
+    const apiKey = context.env.OPENAI_API_KEY;
 
+    if (!apiKey) {
+      console.error("❌ ERROR: OPENAI_API_KEY missing in Cloudflare env");
+      return NextResponse.json(
+        { error: "Server configuration error." },
+        { status: 500 }
+      );
+    }
+
+    const client = new OpenAI({ apiKey });
+
+    // Rate Limiting
+    const userKey = getUserKey(req);
+    const now = Date.now();
     const record = usageMap.get(userKey);
 
     if (!record || now > record.resetAt) {
       usageMap.set(userKey, {
         count: 1,
-        resetAt: now + 24 * 60 * 60 * 1000, // 24 hours
+        resetAt: now + 24 * 60 * 60 * 1000,
       });
     } else {
       if (record.count >= DAILY_LIMIT) {
-  return NextResponse.json(
-    {
-      reply: "⚠️ Daily usage limit reached. Please try again tomorrow.",
-    },
-    { status: 429 }
-  );
-}
-
+        return NextResponse.json(
+          {
+            reply: "⚠️ Daily usage limit reached. Please try again tomorrow.",
+          },
+          { status: 429 }
+        );
+      }
       record.count += 1;
       usageMap.set(userKey, record);
     }
+
+    // Validate Input
     const body = await req.json();
     const userMessage = body.message;
 
@@ -55,7 +65,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
 
-    // hard user cap
     if (userMessage.length > 800) {
       return NextResponse.json(
         { error: "Message too long." },
@@ -63,28 +72,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // OpenAI Request
     const response = await client.responses.create({
-      model: AI_MODEL, // model lock from config
+      model: AI_MODEL,
       input: userMessage,
       max_output_tokens: AI_SETTINGS.maxOutputTokens,
       temperature: AI_SETTINGS.temperature,
     });
 
-    const firstOutput = response.output?.[0];
-
     let text = "No response.";
+    const first = response.output?.[0];
 
-    if (firstOutput && "content" in firstOutput && Array.isArray(firstOutput.content)) {
-      const chunk = firstOutput.content[0];
-
-      if (chunk && "text" in chunk) {
-        text = chunk.text;
-      }
+    if (first && "content" in first && Array.isArray(first.content)) {
+      const chunk = first.content[0];
+      if (chunk && "text" in chunk) text = chunk.text;
     }
 
-
     return NextResponse.json({ reply: text });
-
   } catch (error) {
     console.error("OpenAI Error:", error);
     return NextResponse.json(
