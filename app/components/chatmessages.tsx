@@ -12,9 +12,9 @@ type ChatMessagesProps = {
 
 export default function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4 
+    <div className="flex-1 overflow-y-hidden p-4 pb-28 space-y-4 
                     bg-white dark:bg-gray-900 
-                    border-b border-gray-300 dark:border-gray-700 
+                    border-gray-300 dark:border-gray-700 
                     relative">
 
       {messages.map((m, i) =>
@@ -60,16 +60,14 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
           </div>
         </div>
       )}
-
-      {/* Taxman Avatar */}
-      <img
-        src="/taxman.png"
-        alt="Mr taxman"
-        className="absolute right-0 bottom-0 
-                   w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 
-                   object-contain opacity-90
-                   pointer-events-none"
-      />
+    <img
+            src="/taxman.png"
+            alt="Mr taxman"
+            className="absolute right-0 bottom-0 
+                      w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 
+                      object-contain opacity-90
+                      pointer-events-none"
+          />
     </div>
   );
 }
