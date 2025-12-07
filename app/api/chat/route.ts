@@ -1,6 +1,6 @@
 export const runtime = "edge";
 
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import OpenAI from "openai";
 import { AI_MODEL, AI_SETTINGS } from "@/lib/aiConfig";
 
@@ -8,7 +8,8 @@ import { AI_MODEL, AI_SETTINGS } from "@/lib/aiConfig";
 const DAILY_LIMIT = 15;
 const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
 
-function getUserKey(req: Request) {
+// get IP
+function getUserKey(req: NextRequest) {
   const ip =
     req.headers.get("x-forwarded-for") ||
     req.headers.get("x-real-ip") ||
@@ -17,24 +18,18 @@ function getUserKey(req: Request) {
   return ip.split(",")[0].trim();
 }
 
-export async function POST(
-  req: Request,
-  context: { env: { OPENAI_API_KEY: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
-    const apiKey = context.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
-      console.error("❌ ERROR: OPENAI_API_KEY missing in Cloudflare env");
-      return NextResponse.json(
-        { error: "Server configuration error." },
-        { status: 500 }
-      );
+      console.error("❌ ERROR: Missing OPENAI_API_KEY in environment.");
+      return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
     const client = new OpenAI({ apiKey });
 
-    // Rate Limiting
+    // RATE LIMITING
     const userKey = getUserKey(req);
     const now = Date.now();
     const record = usageMap.get(userKey);
@@ -47,17 +42,16 @@ export async function POST(
     } else {
       if (record.count >= DAILY_LIMIT) {
         return NextResponse.json(
-          {
-            reply: "⚠️ Daily usage limit reached. Please try again tomorrow.",
-          },
+          { reply: "⚠️ Daily usage limit reached. Try again tomorrow." },
           { status: 429 }
         );
       }
+
       record.count += 1;
       usageMap.set(userKey, record);
     }
 
-    // Validate Input
+    // READ BODY
     const body = await req.json();
     const userMessage = body.message;
 
@@ -65,14 +59,12 @@ export async function POST(
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
 
+    // LENGTH CHECK
     if (userMessage.length > 800) {
-      return NextResponse.json(
-        { error: "Message too long." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Message too long." }, { status: 400 });
     }
 
-    // OpenAI Request
+    // OPENAI CALL
     const response = await client.responses.create({
       model: AI_MODEL,
       input: userMessage,
@@ -80,20 +72,18 @@ export async function POST(
       temperature: AI_SETTINGS.temperature,
     });
 
+    const firstOutput = response.output?.[0];
     let text = "No response.";
-    const first = response.output?.[0];
 
-    if (first && "content" in first && Array.isArray(first.content)) {
-      const chunk = first.content[0];
+    if (firstOutput && "content" in firstOutput && Array.isArray(firstOutput.content)) {
+      const chunk = firstOutput.content[0];
       if (chunk && "text" in chunk) text = chunk.text;
     }
 
     return NextResponse.json({ reply: text });
-    } catch (error: any) {
-      console.error("🔥 Server Runtime Error:", error?.message || error);
-      return NextResponse.json(
-        { error: "OpenAI request failed." },
-        { status: 500 }
-      );
-    }
+
+  } catch (error: any) {
+    console.error("🔥 Server Error:", error?.message || error);
+    return NextResponse.json({ error: "OpenAI request failed" }, { status: 500 });
+  }
 }
