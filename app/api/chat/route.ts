@@ -89,11 +89,11 @@ export async function POST(
     }
 
     return NextResponse.json({ reply: text });
-  } catch (error) {
-    console.error("OpenAI Error:", error);
-    return NextResponse.json(
-      { error: "OpenAI request failed" },
-      { status: 500 }
-    );
-  }
+    } catch (error: any) {
+      console.error("🔥 Server Runtime Error:", error?.message || error);
+      return NextResponse.json(
+        { error: "OpenAI request failed." },
+        { status: 500 }
+      );
+    }
 }
