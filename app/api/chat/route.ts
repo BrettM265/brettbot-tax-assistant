@@ -1,11 +1,12 @@
-// In-memory daily rate limit
-const DAILY_LIMIT = 15;
-const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
-
+export const runtime = "edge";
 
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { AI_MODEL, AI_SETTINGS } from "@/lib/aiConfig";
+
+// In-memory daily rate limit
+const DAILY_LIMIT = 15;
+const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
