@@ -7,7 +7,6 @@ import { AI_MODEL, AI_SETTINGS } from "@/lib/aiConfig";
 const DAILY_LIMIT = 15;
 const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
 
-// Identify the user via IP so rate limits work
 function getUserKey(req: Request) {
   const ip =
     req.headers.get("x-forwarded-for") ||
@@ -17,23 +16,22 @@ function getUserKey(req: Request) {
   return ip.split(",")[0].trim();
 }
 
-// MAIN POST HANDLER
-export async function POST(
-  req: Request,
-  ctx: { env: { OPENAI_API_KEY: string } }
-) {
+export async function POST(req: Request) {
   try {
-    // Cloudflare environment variable
-    const apiKey = ctx.env.OPENAI_API_KEY;
+    // Cloudflare provides env vars via process.env in Next.js builds
+    const apiKey = process.env.OPENAI_API_KEY;
+
     if (!apiKey) {
-      console.error("❌ Missing OPENAI_API_KEY in Cloudflare environment");
+      console.error("❌ Missing OPENAI_API_KEY in environment");
       return NextResponse.json(
-        { error: "Server configuration error: Missing API key" },
+        { error: "Server missing API key" },
         { status: 500 }
       );
     }
 
+    // -----------------------------
     // RATE LIMITING
+    // -----------------------------
     const userKey = getUserKey(req);
     const now = Date.now();
     const record = usageMap.get(userKey);
@@ -41,20 +39,25 @@ export async function POST(
     if (!record || now > record.resetAt) {
       usageMap.set(userKey, {
         count: 1,
-        resetAt: now + 24 * 60 * 60 * 1000, // 24 hours
+        resetAt: now + 24 * 60 * 60 * 1000,
       });
     } else {
       if (record.count >= DAILY_LIMIT) {
         return NextResponse.json(
-          { reply: "⚠️ Daily usage limit reached. Please try again tomorrow." },
+          {
+            reply: "⚠️ Daily usage limit reached. Please try again tomorrow.",
+          },
           { status: 429 }
         );
       }
+
       record.count += 1;
       usageMap.set(userKey, record);
     }
 
-    // READ USER MESSAGE
+    // -----------------------------
+    // READ USER INPUT
+    // -----------------------------
     const body = await req.json();
     const userMessage = body.message;
 
@@ -69,12 +72,14 @@ export async function POST(
       );
     }
 
-    // CALL OPENAI (Edge Compatible)
+    // -----------------------------
+    // CALL OPENAI (Edge-compatible fetch)
+    // -----------------------------
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: AI_MODEL,
@@ -85,8 +90,8 @@ export async function POST(
     });
 
     if (!openaiResponse.ok) {
-      const errText = await openaiResponse.text();
-      console.error("❌ OpenAI API Error:", errText);
+      const err = await openaiResponse.text();
+      console.error("❌ OpenAI error:", err);
       return NextResponse.json(
         { error: "OpenAI request failed" },
         { status: 500 }
@@ -95,24 +100,23 @@ export async function POST(
 
     const data = await openaiResponse.json();
 
-    // EXTRACT MODEL TEXT SAFELY
-
+    // -----------------------------
+    // SAFE OUTPUT EXTRACTION
+    // -----------------------------
     let text = "No response.";
 
     try {
-      const firstOutput = data.output?.[0];
-
-      if (firstOutput?.content?.[0]?.text) {
-        text = firstOutput.content[0].text;
+      const output = data.output?.[0];
+      if (output?.content?.[0]?.text) {
+        text = output.content[0].text;
       }
     } catch (err) {
-      console.error("❌ Extracting OpenAI output failed:", err);
+      console.error("❌ Failed to parse OpenAI response:", err);
     }
 
     return NextResponse.json({ reply: text });
-
   } catch (error) {
-    console.error("❌ Chat Route Fatal Error:", error);
+    console.error("❌ Server error:", error);
     return NextResponse.json(
       { error: "Server error processing request" },
       { status: 500 }
