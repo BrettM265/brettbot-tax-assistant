@@ -5,7 +5,7 @@ type ChatResponse = {
 
 export async function sendChatMessage(prompt: string): Promise<ChatResponse> {
   try {
-    const res = await fetch("/api/chat", {
+    const res = await fetch(`${window.location.origin}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
