@@ -14,7 +14,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
   return (
     <div className="flex-1 overflow-y-hidden p-4 pb-28 space-y-4 
                     bg-white dark:bg-gray-900 
-                    border-gray-300 dark:border-gray-700 
+                    border-b border-gray-300 dark:border-gray-700 
                     relative">
 
       {messages.map((m, i) =>
