@@ -81,10 +81,12 @@ const handleButtonClick = async (label: string) => {
   const intent = INTENTS[label];
 
   const engineeredPrompt = buildEngineeredPrompt({
-    userMessage: label,
-    taxData,
-    intent,
-  });
+  userMessage: label,
+  taxData,
+  intentKey: INTENTS[label].key,
+  intentHint: INTENTS[label].hint,
+});
+
 
   try {
     const data = await sendChatMessage(engineeredPrompt);
