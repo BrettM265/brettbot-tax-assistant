@@ -73,12 +73,14 @@ export async function POST(req: Request) {
 
     let text = "No response.";
 
-    if (firstOutput && "content" in firstOutput) {
+    if (firstOutput && "content" in firstOutput && Array.isArray(firstOutput.content)) {
       const chunk = firstOutput.content[0];
+
       if (chunk && "text" in chunk) {
         text = chunk.text;
       }
     }
+
 
     return NextResponse.json({ reply: text });
 
