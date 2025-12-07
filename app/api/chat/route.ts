@@ -1,9 +1,6 @@
 // In-memory daily rate limit
 const DAILY_LIMIT = 15;
-const usageMap = new Map<
-  string,
-  { count: number; resetAt: number }
->();
+const usageMap: Map<string, { count: number; resetAt: number }> = new Map();
 
 
 import { NextResponse } from "next/server";
@@ -72,10 +69,19 @@ export async function POST(req: Request) {
       temperature: AI_SETTINGS.temperature,
     });
 
-    const text =
-      response.output?.[0]?.content?.[0]?.text || "No response.";
+    const firstOutput = response.output?.[0];
+
+    let text = "No response.";
+
+    if (firstOutput && "content" in firstOutput) {
+      const chunk = firstOutput.content[0];
+      if (chunk && "text" in chunk) {
+        text = chunk.text;
+      }
+    }
 
     return NextResponse.json({ reply: text });
+
   } catch (error) {
     console.error("OpenAI Error:", error);
     return NextResponse.json(
