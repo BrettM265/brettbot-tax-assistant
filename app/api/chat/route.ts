@@ -1,5 +1,5 @@
 // In-memory daily rate limit
-const DAILY_LIMIT = 10;
+const DAILY_LIMIT = 15;
 const usageMap = new Map<
   string,
   { count: number; resetAt: number }

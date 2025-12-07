@@ -17,13 +17,13 @@ export const INTENTS: Record<
     key: "deductions",
     hint: "Common US deductions only.",
   },
-  "W2 Income": {
-    key: "w2",
-    hint: "W2 wages and employers.",
+  "Crypto": {
+    key: "crypto",
+    hint: "cryptocurrency transactions.",
   },
-  "1099 Income": {
-    key: "i1099",
-    hint: "1099 income and expenses.",
+  "Gambling": {
+    key: "gambling",
+    hint: "Gambling",
   },
   Dependents: {
     key: "dependents",
@@ -80,6 +80,7 @@ Rules:
 - End early if reaching the limit but DO NOT trail off without finishing your thought.
 - If unsure, say "I don't know".
 - Assume individual filer with standard deduction unless you recommend something different based on user inputs.
+- Do not ask questions, give information only.
 `;
 
   const known = `Known:
@@ -91,7 +92,7 @@ Rules:
     ? `Topic Focus: ${intentHint}`
     : intentKey
     ? `Topic Focus: ${intentKey}`
-    : "Topic Focus: General tax question";
+    : "Topic Focus: General tax information";
 
   return `${base}
 

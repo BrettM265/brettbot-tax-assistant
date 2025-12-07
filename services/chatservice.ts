@@ -1,5 +1,3 @@
-// /services/chatService.ts
-
 type ChatResponse = {
   reply?: string;
   error?: string;

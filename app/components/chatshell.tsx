@@ -35,17 +35,17 @@ export default function ChatShell() {
   });
 
   const buttons = [
-    "Deductables",
-    "W2 Income",
-    "1099 Income",
-    "Dependents",
-    "State Tax",
-    "Federal Tax",
     "Credits",
+    "Crypto",
+    "Deductables",
+    "Dependents",
+    "Federal Tax",
     "Filing Status",
-    "Property Tax",
-    "Mortgage Interest",
+    "Gambling",
     "Investments",
+    "Mortgage Interest",
+    "Property Tax",
+    "State Tax",
   ];
 
   // Send typed message to API with engineered prompt
