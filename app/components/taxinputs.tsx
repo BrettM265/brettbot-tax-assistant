@@ -43,15 +43,15 @@ export default function TaxProfileInputs({
                      text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
 
-        {/* State Dropdown */}
+       {/* State Dropdown */}
         <select
           value={taxData.state || ""}
           onChange={(e) =>
             setTaxData((prev: any) => ({ ...prev, state: e.target.value }))
           }
-          className="w-1/4 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                     bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
-                     text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-1/5 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                    bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
+                    text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">State</option>
           {[
@@ -71,15 +71,16 @@ export default function TaxProfileInputs({
           onChange={(e) =>
             setTaxData((prev: any) => ({ ...prev, dependents: e.target.value }))
           }
-          className="w-1/4 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                     bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
-                     text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-1/3 px-2 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                    bg-white dark:bg-gray-900 text-gray-900 dark:text-white 
+                    text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Dependants</option>
           {Array.from({ length: 13 }, (_, i) => (
             <option key={i} value={i}>{i}</option>
           ))}
         </select>
+
 
         {/* Submit Button */}
         <button
