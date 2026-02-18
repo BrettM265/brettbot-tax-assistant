@@ -86,6 +86,7 @@ export async function POST(req: Request) {
         input: userMessage,
         max_output_tokens: AI_SETTINGS.maxOutputTokens,
         temperature: AI_SETTINGS.temperature,
+        stream: true,
       }),
     });
 
@@ -98,23 +99,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const data = await openaiResponse.json();
+return new Response(openaiResponse.body, {
+  headers: {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+  },
+});
 
-    // -----------------------------
-    // SAFE OUTPUT EXTRACTION
-    // -----------------------------
-    let text = "No response.";
-
-    try {
-      const output = data.output?.[0];
-      if (output?.content?.[0]?.text) {
-        text = output.content[0].text;
-      }
-    } catch (err) {
-      console.error("❌ Failed to parse OpenAI response:", err);
-    }
-
-    return NextResponse.json({ reply: text });
   } catch (error) {
     console.error("❌ Server error:", error);
     return NextResponse.json(
