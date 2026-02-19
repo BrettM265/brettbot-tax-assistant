@@ -25,6 +25,20 @@ export function useChatHistory(initialMessage: ChatMessage) {
     );
   }
 
+  function updateLastAssistantMessage(newContent: string) {
+  setMessages((prev) => {
+    const copy = [...prev];
+    for (let i = copy.length - 1; i >= 0; i--) {
+      if (copy[i].role === "assistant") {
+        copy[i] = { ...copy[i], content: newContent };
+        break;
+      }
+    }
+    return keepLastTwo(copy);
+  });
+}
+
+
   function resetChat() {
     setMessages([initialMessage]);
   }
@@ -34,5 +48,6 @@ export function useChatHistory(initialMessage: ChatMessage) {
     addUserMessage,
     addAssistantMessage,
     resetChat,
+    updateLastAssistantMessage,
   };
 }

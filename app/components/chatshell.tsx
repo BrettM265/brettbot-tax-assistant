@@ -17,6 +17,7 @@ export default function ChatShell() {
   addUserMessage,
   addAssistantMessage,
   resetChat,
+  updateLastAssistantMessage,
 } = useChatHistory({
   role: "assistant",
   content:
@@ -48,6 +49,14 @@ export default function ChatShell() {
     "State Tax",
   ];
 
+  // onDelta callback to receive streaming responses from API
+  let streamedText = "";
+  const onDelta = (chunk: string) => {
+    streamedText += chunk;
+    updateLastAssistantMessage(streamedText);
+  };
+
+
   // Send typed message to API with engineered prompt
 const handleSend = async () => {
   if (!taxData.income || !taxData.state || isLoading) return;
@@ -56,6 +65,7 @@ const handleSend = async () => {
 
   addUserMessage(userText);
   setIsLoading(true);
+  addAssistantMessage("");
 
   const engineeredPrompt = buildEngineeredPrompt({
     userMessage: userText,
@@ -63,7 +73,7 @@ const handleSend = async () => {
   });
 
   try {
-    const data = await sendChatMessage(engineeredPrompt);
+    const data = await sendChatMessage(engineeredPrompt, onDelta);
 
     addAssistantMessage(data.reply || data.error || "No response.");
   } catch {
@@ -89,7 +99,7 @@ const handleButtonClick = async (label: string) => {
 
 
   try {
-    const data = await sendChatMessage(engineeredPrompt);
+    const data = await sendChatMessage(engineeredPrompt, onDelta);
 
     addAssistantMessage(data.reply || data.error || "No response.");
   } catch {
