@@ -73,20 +73,19 @@ const handleSend = async () => {
   });
 
   try {
-    const data = await sendChatMessage(engineeredPrompt, onDelta);
-
-    addAssistantMessage(data.reply || data.error || "No response.");
-  } catch {
-    addAssistantMessage("Network error talking to the tax assistant.");
-  } finally {
-    setIsLoading(false);
-  }
+  await sendChatMessage(engineeredPrompt, onDelta);
+} catch {
+  addAssistantMessage("Network error talking to the tax assistant.");
+} finally {
+  setIsLoading(false);
+}
 };
 
   // Button-driven intent (example: Deductions)
 const handleButtonClick = async (label: string) => {
   addUserMessage(label);
   setIsLoading(true);
+  addAssistantMessage("");
 
   const intent = INTENTS[label];
 
@@ -99,14 +98,12 @@ const handleButtonClick = async (label: string) => {
 
 
   try {
-    const data = await sendChatMessage(engineeredPrompt, onDelta);
-
-    addAssistantMessage(data.reply || data.error || "No response.");
-  } catch {
-    addAssistantMessage("Network error.");
-  } finally {
-    setIsLoading(false);
-  }
+  await sendChatMessage(engineeredPrompt, onDelta);
+} catch {
+  addAssistantMessage("Network error.");
+} finally {
+  setIsLoading(false);
+}
 
   console.log("BUTTON:", label);
   console.log("INTENT:", intent);
