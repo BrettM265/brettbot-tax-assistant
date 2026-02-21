@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ChatHeader from "../components/chatheader";
 import ChatMessages from "../components/chatmessages";
 import TaxProfileInputs from "../components/taxinputs";
@@ -50,11 +50,11 @@ export default function ChatShell() {
   ];
 
   // onDelta callback to receive streaming responses from API
-  let streamedText = "";
+  const streamedTextRef = useRef("");
   const onDelta = (chunk: string) => {
-    streamedText += chunk;
-    updateLastAssistantMessage(streamedText);
-  };
+  streamedTextRef.current += chunk;
+  updateLastAssistantMessage(streamedTextRef.current);
+};
 
 
   // Send typed message to API with engineered prompt
@@ -65,6 +65,7 @@ const handleSend = async () => {
 
   addUserMessage(userText);
   setIsLoading(true);
+  streamedTextRef.current = "";
   addAssistantMessage("");
 
   const engineeredPrompt = buildEngineeredPrompt({
@@ -85,6 +86,7 @@ const handleSend = async () => {
 const handleButtonClick = async (label: string) => {
   addUserMessage(label);
   setIsLoading(true);
+  streamedTextRef.current = "";
   addAssistantMessage("");
 
   const intent = INTENTS[label];
