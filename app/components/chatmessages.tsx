@@ -49,7 +49,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
         )
       )}
 
-      {/* Thinking Indicator */}
+      {/* Thinking Indicator (no longer in use)
       {isLoading && (
         <div className="flex items-start gap-3">
           <div className="max-w-xs p-2 ml-3 rounded-2xl 
@@ -60,6 +60,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
           </div>
         </div>
       )}
+        */}
     <img
             src="/taxman.png"
             alt="Mr taxman"
