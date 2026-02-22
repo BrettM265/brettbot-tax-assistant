@@ -24,6 +24,8 @@ export default function ChatShell() {
     "Hello! To get started, please provide an annual income, state, and number of dependants.",
 });
 
+  const inFlightRef = useRef(false);
+
   // Structured tax data
   const [taxData, setTaxData] = useState({
     income: null,
@@ -84,6 +86,9 @@ const handleSend = async () => {
 
   // Button-driven intent (example: Deductions)
 const handleButtonClick = async (label: string) => {
+  if (inFlightRef.current) return;
+    inFlightRef.current = true;
+  
   addUserMessage(label);
   setIsLoading(true);
   streamedTextRef.current = "";
@@ -105,6 +110,7 @@ const handleButtonClick = async (label: string) => {
   addAssistantMessage("Network error.");
 } finally {
   setIsLoading(false);
+  inFlightRef.current = false;
 }
 
   console.log("BUTTON:", label);
